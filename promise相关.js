@@ -159,7 +159,7 @@ MyPromise.all = function(promises) {
                 resolvedCnt++;
                 resolvedRes[i]=value;
                 if(resolvedCnt === promiseNum) {
-                    return resolve(resolvedRes);
+                    resolve(resolvedRes);
                 }
             }).catch(err => {
                 reject(err);
