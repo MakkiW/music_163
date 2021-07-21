@@ -7,8 +7,8 @@ class Scheduler {
       this.cur = 0;
       this.queue = [];
     }
+    //add返回一个promise，将该promise的resolve()赋值给本轮传入的promiseCreator的resolve属性，若当前队列小于2，则直接执行，否则推入等待队列
     add(promiseCreator) {
-
         return new Promise((resolve, reject) => {
             promiseCreator.resolve = resolve;
             if(this.doing.length<2) {
@@ -21,10 +21,11 @@ class Scheduler {
     doTask(promiseCreator) {
         this.doing.push(promiseCreator);
         promiseCreator().then(() => {
-            promiseCreator.resolve();
+            //此时任务已执行完
+            promiseCreator.resolve(); //实际上是调用add返回的promise中的resolve，将add返回的promise改变状态
             this.removeTask(promiseCreator);
             if(this.waiting.length>0) {
-                this.doTask(this.waiting.shift());
+                this.doTask(this.waiting.shift()); 
             }
         })
     }
