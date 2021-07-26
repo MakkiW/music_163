@@ -7,8 +7,8 @@ class Scheduler {
       this.cur = 0;
       this.queue = [];
     }
-    //add返回一个promise，将该promise的resolve()赋值给本轮传入的promiseCreator的resolve属性，若当前队列小于2，则直接执行，否则推入等待队列
     add(promiseCreator) {
+
         return new Promise((resolve, reject) => {
             promiseCreator.resolve = resolve;
             if(this.doing.length<2) {
@@ -21,11 +21,10 @@ class Scheduler {
     doTask(promiseCreator) {
         this.doing.push(promiseCreator);
         promiseCreator().then(() => {
-            //此时任务已执行完
-            promiseCreator.resolve(); //实际上是调用add返回的promise中的resolve，将add返回的promise改变状态
+            promiseCreator.resolve();
             this.removeTask(promiseCreator);
             if(this.waiting.length>0) {
-                this.doTask(this.waiting.shift()); 
+                this.doTask(this.waiting.shift());
             }
         })
     }
@@ -46,3 +45,70 @@ class Scheduler {
   addTask(500, '2');
   addTask(300, '3');
   addTask(400, '4');
+
+
+  // 字节面试题，实现一个异步加法
+function asyncAdd(a, b, callback) {
+    setTimeout(function () {
+      callback(null, a + b);
+    }, 500);
+  }
+  
+  // 解决方案
+  // 1. promisify
+  const promiseAdd = (a, b) => new Promise((resolve, reject) => {
+    asyncAdd(a, b, (err, res) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(res)
+      }
+    })
+  })
+  
+  // 2. 串行处理
+  async function serialSum(...args) {
+    return args.reduce((task, now) => task.then(res => promiseAdd(res, now)), Promise.resolve(0))
+  }
+  
+  // 3. 并行处理
+  async function parallelSum(...args) {
+    if (args.length === 1) return args[0]
+    const tasks = []
+    for (let i = 0; i < args.length; i += 2) {
+      tasks.push(promiseAdd(args[i], args[i + 1] || 0))
+    }
+    const results = await Promise.all(tasks)
+    return parallelSum(...results)
+  }
+  
+  // 测试
+  (async () => {
+    console.log('Running...');
+    const res1 = await serialSum(1, 2, 3, 4, 5, 8, 9, 10, 11, 12)
+    console.log(res1)
+    const res2 = await parallelSum(1, 2, 3, 4, 5, 8, 9, 10, 11, 12)
+    console.log(res2)
+    console.log('Done');
+  })()
+
+let sequence = []
+const limitLoad = (urls, handler, limit) =>  {
+    let promises = urls.splice(0,limit).map((item, index) => {
+        return handler(item).then(()=>{
+            return index
+        })
+    })
+    return urls.reduce((prev, curUrl) => {
+        return prev.then(()=> {
+            return Promise.race(promises)
+        }).then(fastIdx => {
+            promises[fastIdx] = handler(curUrl).then(()=>{
+                return fastIdx
+            })
+        })
+    }, Promise.resolve())
+    .then(() => {
+        return Promise.all(promises)
+    })
+}
