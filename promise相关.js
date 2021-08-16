@@ -62,6 +62,8 @@ function MyPromise(excutor){
     function _resolve(value) {
         if(value instanceof MyPromise) {
             return value.then(_resolve,_reject);
+            /*当value为promise时，value的状态就会传递给该promise（以下用p简称），也就是说，value的状态决定了p的状态。如果value的状态是pending，
+            那么p的回调函数就会等待value的状态改变；如果value的状态已经是resolved或者rejected，那么p的回调函数将会立刻执行。*/
         }
         setTimeout(() => {  //确保onFulfilled/onRejected方法异步执行，且在then被调用那一轮循环之后的新执行栈执行，
             //保证new Promise()中的resolve/reject成功执行，防止出现then方法未执行，导致回调函数未注册的情况
@@ -94,8 +96,8 @@ MyPromise.prototype.then = function(onFulfilled, onRejected) {
     const that = this;
     let newPromise;
     // 根据规范，如果then的参数不是function，则我们需要忽略它, 让链式调用继续往下执行
-    onFulfilled = typeof onFulfilled === "function"? onFulfilled:value=>value;
-    onRejected = typeof onRejected === "function"? onRejected: reason => {throw reason;};
+    onFulfilled = typeof onFulfilled === "function" ? onFulfilled : value => value;
+    onRejected = typeof onRejected === "function"? onRejected : reason => { throw reason; };
     // 当状态已经变为resolve/reject时,直接执行then回调
     if(that.status === FULFILLED) {
         return newPromise=new MyPromise((resolve, reject) => {
