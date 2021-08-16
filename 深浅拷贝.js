@@ -115,6 +115,7 @@ const deepClone = (target, map = new WeakMap()) => {  //用weakmap避免强引�
     }
     //处理数组和对象
     for(let prop in target) { //若为数组，此时prop为下标
+        //hasOwnProperty会返回一个布尔值，指示对象自身属性中是否具有指定的属性（也就是，是否有指定的键）。
         if(target.hasOwnProperty(prop)) {
             cloneTarget[prop] = deepClone(target[prop],map);
         }
